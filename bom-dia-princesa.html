@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Bom dia, princesa!</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body {
+    height:100%;
+    overflow:hidden;
+    overscroll-behavior:none;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, #f7f1ea 0%, #efe3d6 100%);
+  }
+
+  /* ===== TELA DA CARTA ===== */
+  .envelope-scene {
+    position:fixed;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:26px;
+    z-index:20;
+  }
+
+  .envelope {
+    position:relative;
+    width:220px;
+    height:150px;
+    cursor:pointer;
+    animation: floatEnv 3s ease-in-out infinite;
+  }
+  @keyframes floatEnv {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .envelope .back {
+    position:absolute;
+    inset:0;
+    background: linear-gradient(160deg, #fff8ef, #f0dcc4);
+    border-radius:6px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.25);
+  }
+  .envelope .pocket-left,
+  .envelope .pocket-right {
+    position:absolute;
+    bottom:0;
+    width:0; height:0;
+    border-style:solid;
+    z-index:2;
+  }
+  .envelope .pocket-left {
+    left:0;
+    border-width: 150px 110px 0 0;
+    border-color: transparent #e6c9a8 transparent transparent;
+    opacity:0.9;
+  }
+  .envelope .pocket-right {
+    right:0;
+    border-width: 0 110px 150px 0;
+    border-color: transparent transparent #e6c9a8 transparent;
+    opacity:0.9;
+  }
+  .envelope .flap {
+    position:absolute;
+    top:0; left:0;
+    width:0; height:0;
+    border-style:solid;
+    border-width: 0 110px 90px 110px;
+    border-color: transparent transparent #fbead4 transparent;
+    transform-origin: top center;
+    transition: transform 0.9s cubic-bezier(.6,.05,.3,1);
+    z-index:5;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.18));
+  }
+  .envelope.open .flap {
+    transform: rotateX(180deg);
+    z-index:1;
+  }
+
+  .seal {
+    position:absolute;
+    top:74px;
+    left:50%;
+    transform:translateX(-50%);
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #b98fc9, #7a4a94);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.4);
+    z-index:6;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    animation: sealBeat 1.5s ease-in-out infinite;
+  }
+  @keyframes sealBeat {
+    0%,100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.12); }
+  }
+  .envelope.open .seal { opacity:0; transform: translateX(-50%) scale(0.5); }
+
+  .letter {
+    position:absolute;
+    left:50%;
+    bottom:14px;
+    width:170px;
+    height:100px;
+    background: #fffdf8;
+    border-radius:4px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    transform: translateX(-50%) translateY(0);
+    transition: transform 1s cubic-bezier(.2,.8,.25,1) 0.15s;
+    z-index:3;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding-top:8px;
+    font-size:18px;
+  }
+  .envelope.open .letter {
+    transform: translateX(-50%) translateY(-190px);
+  }
+
+  .hint {
+    color:#8a5a3c;
+    font-size:16px;
+    letter-spacing:0.5px;
+    opacity:0.85;
+    animation: pulseHint 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseHint {
+    0%,100% { opacity:0.5; }
+    50% { opacity:1; }
+  }
+  .envelope-scene.hide {
+    animation: fadeOutEnv 0.6s ease forwards;
+    pointer-events:none;
+  }
+  @keyframes fadeOutEnv {
+    to { opacity:0; }
+  }
+
+  /* ===== CENA DAS FLORES ===== */
+  .scene {
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    background: linear-gradient(160deg, #f7f1ea 0%, #efe3d6 100%);
+  }
+
+  .flower {
+    position:absolute;
+    top:0; left:0;
+    pointer-events:none;
+    contain: layout style paint;
+  }
+  .flower svg { display:block; width:100%; height:100%; }
+
+  .message {
+    position:relative;
+    text-align:center;
+    z-index:10;
+    width: min(85%, 380px);
+    padding: 30px 26px 26px;
+    background: rgba(245, 232, 212, 0.95);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    backdrop-filter: blur(4px);
+    opacity:0;
+    transform: translateY(16px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .message.show {
+    opacity:1;
+    transform: translateY(0);
+  }
+  .message .icon {
+    font-size: 32px;
+    display:block;
+    margin-bottom: 8px;
+    animation: iconBeat 1.6s ease-in-out infinite;
+  }
+  @keyframes iconBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+  }
+  .message h1 {
+    font-size: clamp(24px, 6vw, 36px);
+    color:#7a1f38;
+    font-family: 'Brush Script MT', cursive, sans-serif;
+  }
+  .message p {
+    margin-top:10px;
+    font-size: clamp(14px, 3vw, 17px);
+    color:#5c4632;
+    font-weight:500;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+  <!-- gradientes compartilhados: evita recriar defs para cada flor (otimizado p/ celular) -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <radialGradient id="fg0" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#a4364f"/><stop offset="100%" stop-color="#5c1626"/></radialGradient>
+      <radialGradient id="fg1" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#8f2c42"/><stop offset="100%" stop-color="#4a1420"/></radialGradient>
+      <radialGradient id="fg2" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#b3435c"/><stop offset="100%" stop-color="#6b1e30"/></radialGradient>
+      <radialGradient id="fg3" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#7a2035"/><stop offset="100%" stop-color="#3a0f1a"/></radialGradient>
+      <radialGradient id="fg4" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#9c3350"/><stop offset="100%" stop-color="#54182a"/></radialGradient>
+      <radialGradient id="fg5" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#c25a6e"/><stop offset="100%" stop-color="#722538"/></radialGradient>
+      <radialGradient id="fg6" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#821f36"/><stop offset="100%" stop-color="#41101c"/></radialGradient>
+      <radialGradient id="fg7" cx="50%" cy="25%" r="75%"><stop offset="0%" stop-color="#a83a4a"/><stop offset="100%" stop-color="#5a1a22"/></radialGradient>
+    </defs>
+  </svg>
+
+  <div class="envelope-scene" id="envelopeScene">
+    <div class="envelope" id="envelope">
+      <div class="pocket-left"></div>
+      <div class="pocket-right"></div>
+      <div class="letter">🌸</div>
+      <div class="flap"></div>
+      <div class="back"></div>
+      <div class="seal"></div>
+    </div>
+    <p class="hint">Toque na carta para abrir</p>
+  </div>
+
+  <div class="scene" id="giftScene">
+    <div class="message" id="message">
+      <span class="icon">💗</span>
+      <h1>Bom dia, princesa!</h1>
+      <p>Boa sorte no seu primeiro dia... quer dizer segundo kksksk<br>Vai dar tudo certo, não fique aflita.<br>Estou aqui pra te ouvir se precisar 💗</p>
+    </div>
+  </div>
+
+<script>
+const envelopeEl = document.getElementById('envelope');
+const envelopeScene = document.getElementById('envelopeScene');
+const giftScene = document.getElementById('giftScene');
+const messageEl = document.getElementById('message');
+
+const CENTER_R = [7,4]; // raio base + variação do miolo
+const PALETTE_COUNT = 8;
+
+function makeFlowerSVG(paletteIdx) {
+  const petals = 6 + Math.floor(Math.random()*3); // 6-8 pétalas (leve, bom p/ celular)
+  let petalsSVG = '';
+  for (let i = 0; i < petals; i++) {
+    const angle = (360/petals) * i + Math.random()*8;
+    const rx = 11 + Math.random()*5;
+    const ry = 20 + Math.random()*9;
+    petalsSVG += `<ellipse cx="50" cy="25" rx="${rx}" ry="${ry}" fill="url(#fg${paletteIdx})" opacity="0.95" transform="rotate(${angle} 50 50)"/>`;
+  }
+  const centerR = CENTER_R[0] + Math.random()*CENTER_R[1];
+  return `<svg viewBox="0 0 100 100">${petalsSVG}<circle cx="50" cy="50" r="${centerR}" fill="#2e0a12"/></svg>`;
+}
+
+function createFlowerAt(px, py, tx, ty, spacing) {
+  const f = document.createElement('div');
+  f.className = 'flower';
+  const size = spacing * (1.7 + Math.random()*0.8);
+  f.style.width = size + 'px';
+  f.style.height = size + 'px';
+  f.innerHTML = makeFlowerSVG(Math.floor(Math.random()*PALETTE_COUNT));
+  giftScene.appendChild(f);
+
+  const rot = Math.random()*360;
+  const anim = f.animate([
+    { transform:`translate(${px}px, ${py}px) translate(-50%,-50%) scale(0) rotate(${rot}deg)`, opacity:0 },
+    { transform:`translate(${tx}px, ${ty}px) translate(-50%,-50%) scale(1.1) rotate(${rot}deg)`, opacity:1, offset:0.75 },
+    { transform:`translate(${tx}px, ${ty}px) translate(-50%,-50%) scale(1) rotate(${rot}deg)`, opacity:1 }
+  ], { duration: 420, easing:'cubic-bezier(.34,1.4,.44,1)', fill:'forwards' });
+
+  anim.onfinish = () => {
+    f.animate([
+      { transform:`translate(${tx}px, ${ty}px) translate(-50%,-50%) scale(1) rotate(${rot}deg)` },
+      { transform:`translate(${tx}px, ${ty}px) translate(-50%,-50%) scale(1.05) rotate(${rot}deg)` },
+      { transform:`translate(${tx}px, ${ty}px) translate(-50%,-50%) scale(1) rotate(${rot}deg)` }
+    ], { duration: 2200 + Math.random()*1400, iterations: Infinity, easing:'ease-in-out' });
+  };
+}
+
+function spawnBloomingFlowers() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  // densidade adaptada ao tamanho da tela (otimizado p/ celular: menos flores em telas pequenas)
+  const desiredCount = Math.min(300, Math.max(150, Math.round((w*h) / 8000)));
+  let spacing = Math.sqrt((w*h) / desiredCount);
+  spacing = Math.max(24, spacing * 0.82); // espaçamento menor => flores sobrepostas, sem vãos
+
+  const cols = Math.ceil(w / spacing) + 3;
+  const rows = Math.ceil(h / spacing) + 3;
+  const startX = -spacing;
+  const startY = -spacing;
+
+  const points = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const jx = (Math.random()-0.5) * spacing * 0.85;
+      const jy = (Math.random()-0.5) * spacing * 0.85;
+      const x = startX + c*spacing + spacing/2 + jx;
+      const y = startY + r*spacing + spacing/2 + jy;
+      points.push({ x, y, d: Math.hypot(x-cx, y-cy) });
+    }
+  }
+  points.sort((a,b) => a.d - b.d);
+
+  const placed = [];
+  let delay = 0;
+
+  points.forEach((pt, i) => {
+    let parent;
+    if (i === 0) {
+      parent = { x: cx, y: cy };
+    } else {
+      // pega o pai mais próximo entre os últimos já colocados (rápido e suficiente p/ efeito orgânico)
+      const searchWindow = placed.slice(Math.max(0, placed.length - 24));
+      let best = searchWindow[0];
+      let bestD = Infinity;
+      for (const p of searchWindow) {
+        const dd = Math.hypot(p.x-pt.x, p.y-pt.y);
+        if (dd < bestD) { bestD = dd; best = p; }
+      }
+      parent = best;
+    }
+    placed.push(pt);
+
+    delay += 6 + Math.random()*7;
+    ((px, py, tx, ty, d) => {
+      setTimeout(() => createFlowerAt(px, py, tx, ty, spacing), d);
+    })(parent.x, parent.y, pt.x, pt.y, delay);
+  });
+
+  setTimeout(() => {
+    messageEl.classList.add('show');
+  }, delay + 500);
+}
+
+envelopeEl.addEventListener('click', () => {
+  if (envelopeEl.classList.contains('open')) return;
+  envelopeEl.classList.add('open');
+
+  setTimeout(() => {
+    envelopeScene.classList.add('hide');
+    setTimeout(() => {
+      envelopeScene.style.display = 'none';
+      giftScene.style.display = 'flex';
+      spawnBloomingFlowers();
+    }, 600);
+  }, 1000);
+});
+</script>
+</body>
+</html>
